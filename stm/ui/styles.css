@@ -318,38 +318,46 @@ body.win .titlebar { display: none; }
 .mark .bars b:nth-child(2) { height: 100%; }
 .mark .bars b:nth-child(3) { height: 35%; }
 .mark .bars b:nth-child(4) { height: 75%; }
-/* Splash: Stm's own entrance (same as stm.pxlvzn.in). A lime playhead sweeps across and
-   plays the word into view. Where it stops, the whole song appears as one thick bar that
-   thumps twice with the word, then splits into its four stems, which spring apart to their
-   own levels and dance like live meters before settling.
-   (Dwn drops an arrow, Tag swipes a strike, PXL drops a pixel.) */
-.splash-mark .word-wrap { position: relative; display: inline-block; animation: stm-thump .6s ease-out .95s; }
-.splash-mark .word { display: inline-block; clip-path: inset(-.2em 100% -.3em -.15em); animation: play-in .7s .1s cubic-bezier(.65,0,.35,1) forwards; }
-.splash-mark .head { position: absolute; top: -.06em; bottom: -.04em; left: 0; width: .04em; border-radius: .02em; background: var(--accent);
-  box-shadow: 0 0 .12em rgba(204,255,77,.9), 0 0 .4em rgba(204,255,77,.35); opacity: 0;
-  animation: head-run .7s .1s cubic-bezier(.65,0,.35,1) forwards; }
-.splash-mark .bars b { --step: .12em; transform-origin: 50% 100%; transform: translateX(calc(var(--i) * var(--step) * -1)) scale(2.4, 0);
-  animation: stm-split 1.25s linear .75s forwards, stm-dance var(--d) ease-in-out 2.1s 4 alternate; }
-.mark .bars b:nth-child(1) { --i: 0; --h: .55; --d: .42s; --lo: .55; --hi: 1.25; }
-.mark .bars b:nth-child(2) { --i: 1; --h: 1; --d: .5s; --lo: .7; --hi: 1.05; }
-.mark .bars b:nth-child(3) { --i: 2; --h: .35; --d: .34s; --lo: .6; --hi: 1.9; }
-.mark .bars b:nth-child(4) { --i: 3; --h: .75; --d: .46s; --lo: .5; --hi: 1.2; }
-@keyframes play-in { to { clip-path: inset(-.2em -.15em -.3em -.15em); } }
-@keyframes head-run { 0% { left: 0; opacity: 1; } 85% { opacity: 1; } 100% { left: 100%; opacity: 0; } }
-@keyframes stm-thump { 0%, 40%, 80% { transform: none; } 15%, 55% { transform: scale(1.035); } 100% { transform: none; } }
-@keyframes stm-split {
-  0% { transform: translateX(calc(var(--i) * var(--step) * -1)) scale(2.4, 0); animation-timing-function: cubic-bezier(.2,.8,.3,1); }
-  14% { transform: translateX(calc(var(--i) * var(--step) * -1)) scale(2.4, calc(1 / var(--h))); }
-  24% { transform: translateX(calc(var(--i) * var(--step) * -1)) scale(2.4, calc(.8 / var(--h))); }
-  34% { transform: translateX(calc(var(--i) * var(--step) * -1)) scale(2.4, calc(1 / var(--h))); }
-  44% { transform: translateX(calc(var(--i) * var(--step) * -1)) scale(2.4, calc(.8 / var(--h))); }
-  52% { transform: translateX(calc(var(--i) * var(--step) * -1)) scale(2.4, calc(1 / var(--h))); animation-timing-function: cubic-bezier(.3,1.7,.45,1); }
-  76% { transform: translateX(0) scale(1, 1.18); animation-timing-function: ease-in-out; }
-  88% { transform: translateX(0) scale(1, .9); }
-  100% { transform: none; }
+/* Splash: Stm's own entrance, the song being split.
+   1. The mix: "stm" opens out of a flat line, like a waveform swelling.
+   2. Split: four coloured copies of the word (vocals, drums, bass, other) slide out
+      from behind it into stacked lanes, like tracks in a DAW.
+   3. Each lane squeezes into its bar, which grows smoothly in the stem's colour and
+      eases to lime. (Dwn drops an arrow, Tag swipes a strike, PXL drops a pixel.) */
+.splash-mark .word-wrap { position: relative; display: inline-block; }
+.splash-mark .word { display: inline-block; opacity: 0; transform: scaleY(.04); transform-origin: 50% 62%;
+  animation: stm-word 2.4s linear .1s forwards; }
+.splash-mark .lane { position: absolute; left: 0; top: 0; color: var(--c); opacity: 0; pointer-events: none;
+  animation: stm-lane 1.7s linear var(--t) forwards; }
+.splash-mark .lane.l1 { --c: var(--vocals); --y: -1.05em; --t: .72s; }
+.splash-mark .lane.l2 { --c: var(--drums); --y: -.35em; --t: .76s; }
+.splash-mark .lane.l3 { --c: var(--bass); --y: .35em; --t: .80s; }
+.splash-mark .lane.l4 { --c: var(--other); --y: 1.05em; --t: .84s; }
+.splash-mark .bars b { transform: scaleY(0); transform-origin: 50% 100%; background: var(--c);
+  animation: stm-bar 1s cubic-bezier(.22,1,.36,1) var(--bt) forwards; }
+.splash-mark .bars b:nth-child(1) { --c: var(--vocals); --bt: 1.72s; }
+.splash-mark .bars b:nth-child(2) { --c: var(--drums); --bt: 1.78s; }
+.splash-mark .bars b:nth-child(3) { --c: var(--bass); --bt: 1.84s; }
+.splash-mark .bars b:nth-child(4) { --c: var(--other); --bt: 1.90s; }
+/* The mix swells open, holds, hands over to the four lanes, then comes back once they've gone into the bars. */
+@keyframes stm-word {
+  0% { opacity: 0; transform: scaleY(.04); animation-timing-function: cubic-bezier(.16,1,.3,1); }
+  25% { opacity: 1; transform: none; }
+  30% { opacity: 1; animation-timing-function: ease-in; }
+  40% { opacity: 0; }
+  68% { opacity: 0; animation-timing-function: ease-out; }
+  88%, 100% { opacity: 1; transform: none; }
 }
-@keyframes stm-dance { from { transform: scaleY(var(--hi)); } to { transform: scaleY(var(--lo)); } }
-#splash .glow { animation-delay: .9s; }
+/* Each stem peels off the mix into its own lane, holds, then glides right into its bar. */
+@keyframes stm-lane {
+  0% { opacity: 0; transform: none; animation-timing-function: ease-out; }
+  8% { opacity: 1; animation-timing-function: cubic-bezier(.22,1,.36,1); }
+  42% { opacity: 1; transform: translateY(var(--y)); }
+  58% { opacity: 1; transform: translateY(var(--y)); animation-timing-function: cubic-bezier(.55,0,.75,.3); }
+  100% { opacity: 0; transform: translate(.9em, calc(var(--y) * .2)) scale(.4); }
+}
+@keyframes stm-bar { 0% { transform: scaleY(0); background: var(--c); } 55% { background: var(--c); } 100% { transform: none; background: var(--accent); } }
+#splash .glow { animation-delay: 1.4s; }
 
 :root { --vocals: #ccff4d; --drums: #ff8a5c; --bass: #6fb7ff; --other: #c79bff; --instrumental: #8ce0c4; }
 .stem-legend { display: flex; gap: 6px; flex-wrap: wrap; padding: 0 2px; }

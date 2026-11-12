@@ -422,10 +422,10 @@
     renderEngine();
     renderPill();
     if (!info.ffmpeg) toast("ffmpeg wasn't found, so songs can't be read", true);
-    if (!settings.welcomed) setTimeout(showWelcome, 3300);
+    if (!settings.welcomed) setTimeout(showWelcome, 2900);
     refresh();
-    setTimeout(() => { $('#splash').classList.add('out'); $('#app').classList.add('in'); }, 3300);
-    setTimeout(() => $('#splash').remove(), 4000);
+    setTimeout(() => { $('#splash').classList.add('out'); $('#app').classList.add('in'); }, 2900);
+    setTimeout(() => $('#splash').remove(), 3600);
   }
 
   // Demo data for previewing the UI in a plain browser (open index.html?demo).
