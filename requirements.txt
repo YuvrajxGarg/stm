@@ -1,0 +1,11 @@
+# App window (WebKit on macOS, Edge WebView2 on Windows)
+pywebview>=5.0
+numpy>=1.24
+# Runs the htdemucs model. macOS wheels include CoreML (GPU + Neural Engine);
+# on Windows the DirectML build uses any DirectX 12 GPU (NVIDIA, AMD or Intel).
+onnxruntime>=1.18; sys_platform != "win32"
+onnxruntime-directml>=1.18; sys_platform == "win32"
+# ffmpeg binary for reading songs and writing stems (used if ffmpeg isn't installed system-wide)
+imageio-ffmpeg>=0.4.9
+# Trusted certificates for update checks in the packaged app
+certifi

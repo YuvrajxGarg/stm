@@ -1,0 +1,7 @@
+# Only for tools/export_onnx.py (turning Demucs into models/htdemucs.onnx). Never shipped.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.15.*
+demucs==4.1.0
+onnx>=1.16
+onnxruntime>=1.18
+numpy
