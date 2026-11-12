@@ -324,7 +324,7 @@ body.win .titlebar { display: none; }
    own levels and dance like live meters before settling.
    (Dwn drops an arrow, Tag swipes a strike, PXL drops a pixel.) */
 .splash-mark .word-wrap { position: relative; display: inline-block; animation: stm-thump .6s ease-out .95s; }
-.splash-mark .word { display: inline-block; clip-path: inset(-.2em 100% -.3em 0); animation: play-in .7s .1s cubic-bezier(.65,0,.35,1) forwards; }
+.splash-mark .word { display: inline-block; clip-path: inset(-.2em 100% -.3em -.15em); animation: play-in .7s .1s cubic-bezier(.65,0,.35,1) forwards; }
 .splash-mark .head { position: absolute; top: -.06em; bottom: -.04em; left: 0; width: .04em; border-radius: .02em; background: var(--accent);
   box-shadow: 0 0 .12em rgba(204,255,77,.9), 0 0 .4em rgba(204,255,77,.35); opacity: 0;
   animation: head-run .7s .1s cubic-bezier(.65,0,.35,1) forwards; }
@@ -334,7 +334,7 @@ body.win .titlebar { display: none; }
 .mark .bars b:nth-child(2) { --i: 1; --h: 1; --d: .5s; --lo: .7; --hi: 1.05; }
 .mark .bars b:nth-child(3) { --i: 2; --h: .35; --d: .34s; --lo: .6; --hi: 1.9; }
 .mark .bars b:nth-child(4) { --i: 3; --h: .75; --d: .46s; --lo: .5; --hi: 1.2; }
-@keyframes play-in { to { clip-path: inset(-.2em 0 -.3em 0); } }
+@keyframes play-in { to { clip-path: inset(-.2em -.15em -.3em -.15em); } }
 @keyframes head-run { 0% { left: 0; opacity: 1; } 85% { opacity: 1; } 100% { left: 100%; opacity: 0; } }
 @keyframes stm-thump { 0%, 40%, 80% { transform: none; } 15%, 55% { transform: scale(1.035); } 100% { transform: none; } }
 @keyframes stm-split {
