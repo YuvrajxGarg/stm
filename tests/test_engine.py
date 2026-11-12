@@ -140,7 +140,9 @@ class AudioTests(unittest.TestCase):
         for name in ("Song.mp3", "notes.txt", os.path.join("Song (stems)", "vocals.wav")):
             open(os.path.join(self.d, name), "wb").close()
         self.assertEqual([os.path.basename(p) for p in audio.collect_files([self.d])], ["Song.mp3"])
-        self.assertEqual(audio.output_dir_for("/m/Song.mp3"), os.path.join("/m", "Song (stems)"))
+        song_path = os.path.join(self.d, "Song.mp3")
+        self.assertEqual(audio.output_dir_for(song_path), os.path.join(self.d, "Song (stems)"))
+        self.assertEqual(audio.output_dir_for(song_path, self.d + "x"), os.path.join(self.d + "x", "Song (stems)"))
 
 
 @unittest.skipUnless(fake_model and audio.find_ffmpeg(), "needs onnx and ffmpeg")
