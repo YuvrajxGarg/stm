@@ -60,22 +60,22 @@ def _quick_peaks(path):
 
 class Api(object):
     def __init__(self):
-        self.window = None
-        self.items = {}  # id -> dict
-        self.next_id = 1
-        self.lock = threading.Lock()
-        self.busy = False
-        self.stop = False
-        self.sep = None
-        self.engine_error = None
-        self.settings = Settings()
-        self.updater = Updater(self.settings, lambda st: self._emit("update", st))
+        self._window = None
+        self._items = {}  # id -> dict
+        self._next_id = 1
+        self._lock = threading.Lock()
+        self._busy = False
+        self._stop = False
+        self._sep = None
+        self._engine_error = None
+        self._settings = Settings()
+        self._updater = Updater(self._settings, lambda st: self._emit("update", st))
 
     # ---- helpers ---------------------------------------------------------
     def _emit(self, event, payload):
-        if self.window:
+        if self._window:
             try:
-                self.window.evaluate_js("window.App && App.on(%s, %s)" % (json.dumps(event), json.dumps(payload)))
+                self._window.evaluate_js("window.App && App.on(%s, %s)" % (json.dumps(event), json.dumps(payload)))
             except Exception:
                 pass
 
@@ -90,45 +90,45 @@ class Api(object):
 
     def load_engine(self):
         try:
-            self.sep = engine.Separator(device=self.settings.get("device") or "auto")
-            self.engine_error = None
+            self._sep = engine.Separator(device=self._settings.get("device") or "auto")
+            self._engine_error = None
         except Exception as e:
-            self.sep = None
-            self.engine_error = str(e)
+            self._sep = None
+            self._engine_error = str(e)
         self._emit("engine", self._engine_state())
 
     def _engine_state(self):
-        if self.sep:
-            return {"ready": True, "device": self.sep.device, "model": self.sep.model_name}
-        return {"ready": False, "error": self.engine_error}
+        if self._sep:
+            return {"ready": True, "device": self._sep.device, "model": self._sep.model_name}
+        return {"ready": False, "error": self._engine_error}
 
     # ---- called from JS --------------------------------------------------
     def info(self):
         return {"version": __version__, "ffmpeg": bool(audio.find_ffmpeg()), "platform": sys.platform,
-                "settings": self.settings.public(), "update": self.updater.state(),
+                "settings": self._settings.public(), "update": self._updater.state(),
                 "engine": self._engine_state(), "home": os.path.expanduser("~")}
 
     def set_setting(self, key, value):
         if key in ("out_mode", "custom_dir", "open_after", "auto_check", "auto_install", "welcomed",
                    "stems", "format", "device"):
-            self.settings.set(key, value)
-            if key == "auto_install" and value and self.updater.phase == "available":
-                threading.Thread(target=self.updater.stage_newest, daemon=True).start()
-            if key == "device" and not self.busy:
+            self._settings.set(key, value)
+            if key == "auto_install" and value and self._updater.phase == "available":
+                threading.Thread(target=self._updater.stage_newest, daemon=True).start()
+            if key == "device" and not self._busy:
                 self._emit("engine", {"ready": False, "loading": True})
                 threading.Thread(target=self.load_engine, daemon=True).start()
-        return self.settings.public()
+        return self._settings.public()
 
     def check_updates(self):
-        return self.updater.check(manual=True)
+        return self._updater.check(manual=True)
 
     def download_update(self):
-        threading.Thread(target=self.updater.stage_newest, daemon=True).start()
+        threading.Thread(target=self._updater.stage_newest, daemon=True).start()
 
     def install_update(self):
         def go():
-            if self.updater.install() == "open_page":
-                self.open_url(self.updater.state()["page"])
+            if self._updater.install() == "open_page":
+                self.open_url(self._updater.state()["page"])
         threading.Thread(target=go, daemon=True).start()
 
     def open_url(self, url):
@@ -139,19 +139,19 @@ class Api(object):
 
     def pick_files(self):
         exts = ";".join("*" + e for e in sorted(audio.SUPPORTED_EXTS))
-        res = self.window.create_file_dialog(
+        res = self._window.create_file_dialog(
             webview.FileDialog.OPEN, allow_multiple=True,
             file_types=("Songs and videos (%s)" % exts, "All files (*.*)"))
         if res:
             self.add_paths(list(res))
 
     def pick_folder(self):
-        res = self.window.create_file_dialog(webview.FileDialog.FOLDER)
+        res = self._window.create_file_dialog(webview.FileDialog.FOLDER)
         if res:
             self.add_paths([res[0] if isinstance(res, (list, tuple)) else res])
 
     def choose_output(self):
-        res = self.window.create_file_dialog(webview.FileDialog.FOLDER)
+        res = self._window.create_file_dialog(webview.FileDialog.FOLDER)
         if res:
             return res[0] if isinstance(res, (list, tuple)) else res
         return None
@@ -159,15 +159,15 @@ class Api(object):
     def add_paths(self, paths):
         files = audio.collect_files(paths)
         new = []
-        with self.lock:
-            known = {it["path"] for it in self.items.values()}
+        with self._lock:
+            known = {it["path"] for it in self._items.values()}
             for p in files:
                 if p in known:
                     continue
                 known.add(p)
-                it = {"id": self.next_id, "path": p, "size": _human(os.path.getsize(p)), "status": "reading"}
-                self.items[self.next_id] = it
-                self.next_id += 1
+                it = {"id": self._next_id, "path": p, "size": _human(os.path.getsize(p)), "status": "reading"}
+                self._items[self._next_id] = it
+                self._next_id += 1
                 new.append(it)
         if not files:
             self._emit("toast", {"text": "No songs there", "err": True})
@@ -192,29 +192,29 @@ class Api(object):
                 self._emit("upsert", self._public(it))
 
     def remove(self, item_id):
-        with self.lock:
-            it = self.items.get(int(item_id))
+        with self._lock:
+            it = self._items.get(int(item_id))
             if it and it["status"] not in ("splitting", "queued"):
-                self.items.pop(int(item_id), None)
+                self._items.pop(int(item_id), None)
 
     def clear(self):
-        if not self.busy:
-            with self.lock:
-                self.items.clear()
+        if not self._busy:
+            with self._lock:
+                self._items.clear()
 
     def cancel(self):
-        if self.busy:
-            self.stop = True
+        if self._busy:
+            self._stop = True
 
     def split(self, stems, fmt, mode, custom_dir):
-        if self.busy or not self.sep:
+        if self._busy or not self._sep:
             return
-        todo = [it for it in self.items.values() if it["status"] in ("ready", "failed", "stopped", "done")
+        todo = [it for it in self._items.values() if it["status"] in ("ready", "failed", "stopped", "done")
                 and not (it["status"] == "done" and it.get("mode") == (stems, fmt))]
         if not todo:
             return
-        self.busy = True
-        self.stop = False
+        self._busy = True
+        self._stop = False
         for it in todo:
             it["status"] = "queued"
             it["progress"] = 0
@@ -229,7 +229,7 @@ class Api(object):
         last_dir = None
         self._emit("busy", {"busy": True, "total": len(todo)})
         for i, it in enumerate(todo):
-            if self.stop:
+            if self._stop:
                 it["status"] = "stopped"
                 self._emit("upsert", self._public(it))
                 continue
@@ -251,7 +251,7 @@ class Api(object):
 
             t0 = time.time()
             try:
-                written = core.split_file(self.sep, src, out_dir, stems, fmt, progress=prog, cancel=lambda: self.stop)
+                written = core.split_file(self._sep, src, out_dir, stems, fmt, progress=prog, cancel=lambda: self._stop)
                 it["stems"] = [{"name": n, "path": p} for n, p in written]
                 it["out"] = out_dir
                 it["status"] = "done"
@@ -265,10 +265,10 @@ class Api(object):
                 it["status"] = "failed"
                 it["error"] = str(e)
             self._emit("upsert", self._public(it))
-        self.busy = False
+        self._busy = False
         self._emit("busy", {"busy": False})
-        self._emit("finished", {"ok": ok, "total": len(todo), "dir": last_dir, "stopped": self.stop})
-        if ok and last_dir and self.settings.get("open_after"):
+        self._emit("finished", {"ok": ok, "total": len(todo), "dir": last_dir, "stopped": self._stop})
+        if ok and last_dir and self._settings.get("open_after"):
             self.reveal(last_dir)
 
     def reveal(self, path):
@@ -350,7 +350,7 @@ def main():
         "Stm", url=os.path.join(UI_DIR, "index.html"), js_api=api,
         width=1120, height=720, min_size=(880, 580), background_color=BG, easy_drag=False,
     )
-    api.window = window
+    api._window = window
 
     def on_drop(e):
         files = (e.get("dataTransfer") or {}).get("files") or []
@@ -369,11 +369,13 @@ def main():
         try:
             window.destroy()
         finally:
-            threading.Timer(3.0, lambda: os._exit(0)).start()
+            t = threading.Timer(3.0, lambda: os._exit(0))
+            t.daemon = True
+            t.start()
 
-    api.updater.on_quit_for_install = quit_for_install
-    window.events.closing += lambda: api.updater.install_on_quit()
-    window.events.loaded += lambda: api.updater.start()
+    api._updater.on_quit_for_install = quit_for_install
+    window.events.closing += lambda: api._updater.install_on_quit()
+    window.events.loaded += lambda: api._updater.start()
 
     if sys.platform == "darwin":
         window.events.before_show += lambda: _style_mac(window)
@@ -381,6 +383,11 @@ def main():
         window.events.shown += lambda: _style_windows(window)
     window.events.loaded += on_loaded
     webview.start(debug=bool(os.environ.get("STM_DEBUG")))
+    if os.name == "nt":
+        # The window is closed. Leave without Python's normal shutdown: tearing down pythonnet and
+        # WinForms there can crash, and a crash report keeps the process alive, which stalls the
+        # update swap waiting for it to exit (the app then never reopened after an update).
+        os._exit(0)
 
 
 if __name__ == "__main__":
