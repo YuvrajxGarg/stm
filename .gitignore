@@ -1,0 +1,10 @@
+.venv/
+.venv-build/
+.venv-model/
+build/
+dist/
+__pycache__/
+*(stems)/
+models/
+.claude/
+.DS_Store

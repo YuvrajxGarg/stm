@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Stm</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="splash" class="pywebview-drag-region">
+    <div class="glow"></div>
+    <span class="mark splash-mark" style="--size:76px"><span class="l">s</span><span class="l">t</span><span class="l">m</span><i class="bars"><b></b><b></b><b></b><b></b></i></span>
+  </div>
+
+  <div id="app">
+    <aside id="sidebar">
+      <div class="titlebar pywebview-drag-region"></div>
+      <div class="side-scroll">
+        <div class="card composer">
+          <button id="dropzone" class="dropzone">
+            <div class="dz-icon" data-icon="upload"></div>
+            <b>Drop songs</b>
+            <span>MP3 · WAV · FLAC · M4A · OGG · or a video</span>
+          </button>
+          <div class="row2">
+            <button class="btn-quiet" id="add-files"><i data-icon="file"></i>Add songs</button>
+            <button class="btn-quiet" id="add-folder"><i data-icon="folder"></i>Add folder</button>
+          </div>
+
+          <div class="label">Stems</div>
+          <div class="tabs" id="stems">
+            <button data-v="4" class="on"><i data-icon="layers"></i>4 stems</button>
+            <button data-v="2"><i data-icon="mic"></i>2 stems</button>
+          </div>
+          <div class="stem-legend" id="stem-legend"></div>
+
+          <div class="label">Format</div>
+          <div class="tabs" id="format">
+            <button data-v="wav" class="on">WAV</button>
+            <button data-v="flac">FLAC</button>
+            <button data-v="mp3">MP3</button>
+          </div>
+
+          <div class="label">Save to</div>
+          <div class="tabs" id="out-mode">
+            <button data-mode="beside" class="on"><i data-icon="layers"></i>Beside songs</button>
+            <button data-mode="custom"><i data-icon="folder"></i>Choose folder</button>
+          </div>
+          <button class="custom-row hidden" id="custom-row" title="Change folder">
+            <i data-icon="folder"></i><span class="path" id="custom-path"></span><span class="change">Change</span>
+          </button>
+
+          <div class="progress hidden" id="progress"><div></div></div>
+          <div class="row2">
+            <button class="btn-primary" id="split-btn" disabled><i data-icon="split"></i><span>Split</span></button>
+            <button class="btn-quiet stop hidden" id="stop-btn" title="Stop after this song"><i data-icon="stop"></i>Stop</button>
+          </div>
+        </div>
+      </div>
+
+      <footer id="footer">
+        <button class="frow" id="save-row"><i data-icon="folder"></i><span>Saving to</span><span class="path" id="save-path"></span></button>
+        <div class="frow" id="engine-note"><i class="dot wait"></i><span>Loading the model…</span></div>
+        <div class="frow brandrow">
+          <span class="mark" style="--size:13px;--knock:var(--sidebar)">stm<i class="bars"><b></b><b></b><b></b><b></b></i></span>
+          <span id="version"></span>
+          <button class="update-pill hidden" id="update-pill"></button>
+        </div>
+      </footer>
+    </aside>
+
+    <main id="content">
+      <div class="topbar pywebview-drag-region">
+        <div class="stats" id="stats"></div>
+        <div class="top-actions">
+          <button class="btn-quiet hidden" id="clear"><i data-icon="trash"></i>Clear</button>
+          <button class="btn-icon filled hidden" id="open-out" title="Show stems"><i data-icon="folder"></i></button>
+          <button class="btn-icon filled" id="open-settings" title="Settings"><i data-icon="gear"></i></button>
+        </div>
+      </div>
+      <div id="list" class="list"></div>
+      <div id="empty" class="empty">
+        <div class="logomark lg"><span class="mark" style="--size:30px">stm<i class="bars"><b></b><b></b><b></b><b></b></i></span></div>
+        <h3>Drop a song</h3>
+        <p>Vocals, drums, bass and everything else come out as separate files.<br>It all runs on this computer.</p>
+        <div class="chips"><span class="chip">Acapellas</span><span class="chip">Karaoke tracks</span><span class="chip">Remix stems</span><span class="chip">Drum loops</span><span class="chip">Practice along</span></div>
+      </div>
+    </main>
+  </div>
+
+  <div id="welcome" class="hidden"></div>
+  <div id="drop" class="hidden"><div class="drop-frame"></div><div class="drop-inner"><span class="mark" style="--size:54px">stm<i class="bars"><b></b><b></b><b></b><b></b></i></span>Drop to add</div></div>
+  <div id="modal-root"></div>
+  <div id="toasts"></div>
+  <script src="app.js"></script>
+</body>
+</html>

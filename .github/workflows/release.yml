@@ -1,0 +1,105 @@
+# Builds Stm for macOS and Windows when a version tag (v1.2.3) is pushed, and
+# attaches the apps to that GitHub release. Installed copies check the latest
+# release for updates. The release stays a draft until both apps are attached,
+# so installed copies never see a release that's missing their download:
+#   macOS   -> Stm-mac.zip      + .sha256
+#   Windows -> Stm-windows.zip  + .sha256
+# The htdemucs model is exported from the official Demucs weights in the first
+# job, checked against PyTorch, and bundled into both apps.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to (re)build, e.g. v1.2.0
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  TAG: ${{ github.event.inputs.tag || github.ref_name }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create the release as a draft if it doesn't exist
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$TAG" >/dev/null 2>&1 || \
+            gh release create "$TAG" --title "Stm ${TAG#v}" --generate-notes --verify-tag --draft
+
+  model:
+    uses: ./.github/workflows/model.yml
+    with:
+      ref: ${{ github.event.inputs.tag || github.ref_name }}
+
+  build:
+    needs: [release, model]
+    strategy:
+      matrix:
+        os: [macos-15, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: htdemucs-onnx
+          path: models
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Set version from the tag
+        run: echo "${TAG#v}" > VERSION
+      - run: pip install pyinstaller certifi onnx -r requirements.txt
+      - run: python -m unittest discover tests -v
+      - run: pyinstaller --noconfirm --log-level WARN Stm.spec
+      - name: Smoke-test the built app
+        run: |
+          if [ "$RUNNER_OS" = "macOS" ]; then python tests/smoke_app.py dist/Stm.app/Contents/MacOS/Stm
+          else STM_DEVICE=cpu python tests/smoke_app.py dist/Stm/Stm.exe; fi
+      - name: Package (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          cd dist
+          ditto -c -k --keepParent Stm.app Stm-mac.zip
+          shasum -a 256 Stm-mac.zip > Stm-mac.zip.sha256
+          cat Stm-mac.zip.sha256
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          cd dist
+          Compress-Archive -Path Stm -DestinationPath Stm-windows.zip
+          $h = (Get-FileHash Stm-windows.zip -Algorithm SHA256).Hash.ToLower()
+          "$h  Stm-windows.zip" | Out-File -Encoding ascii -NoNewline Stm-windows.zip.sha256
+          Get-Content Stm-windows.zip.sha256
+      - name: Upload to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$TAG" dist/Stm-*.zip dist/Stm-*.zip.sha256 --clobber
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish the release now that both apps are attached
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          for a in Stm-mac.zip Stm-mac.zip.sha256 Stm-windows.zip Stm-windows.zip.sha256; do
+            gh release view "$TAG" --json assets -q '.assets[].name' | grep -qx "$a" || { echo "missing $a"; exit 1; }
+          done
+          gh release edit "$TAG" --draft=false --latest

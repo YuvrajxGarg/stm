@@ -1,0 +1,35 @@
+# Exports htdemucs (official Demucs weights) to ONNX, checks it gives the same
+# stems as PyTorch Demucs, and hands it on as the "htdemucs-onnx" artifact.
+name: Model
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        type: string
+        required: false
+  workflow_dispatch:
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/torch/hub/checkpoints
+          key: demucs-weights-htdemucs-955717e8
+      - run: pip install -r tools/requirements-export.txt
+      - run: python tools/export_onnx.py
+      - name: Same stems as PyTorch Demucs
+        run: STM_MODEL=models/htdemucs.onnx python -m unittest tests.test_against_torch -v
+      - uses: actions/upload-artifact@v4
+        with:
+          name: htdemucs-onnx
+          path: models/htdemucs.onnx
+          retention-days: 7
