@@ -1,7 +1,11 @@
 # Builds Stm for macOS and Windows when a version tag (v1.2.3) is pushed, and
 # attaches the apps to that GitHub release. Installed copies check the latest
 # release for updates. The release stays a draft until both apps are attached,
-# so installed copies never see a release that's missing their download:
+# so installed copies never see a release that's missing their download.
+# What people download (installer/ builds these):
+#   macOS   -> Stm.dmg          (drag to Applications)
+#   Windows -> Stm-Setup.exe    (setup wizard)
+# What installed copies update from (keep these: every existing install uses them):
 #   macOS   -> Stm-mac.zip      + .sha256
 #   Windows -> Stm-windows.zip  + .sha256
 # The htdemucs model is exported from the official Demucs weights in the first
@@ -76,6 +80,9 @@ jobs:
           ditto -c -k --keepParent Stm.app Stm-mac.zip
           shasum -a 256 Stm-mac.zip > Stm-mac.zip.sha256
           cat Stm-mac.zip.sha256
+      - name: Disk image (macOS)
+        if: runner.os == 'macOS'
+        run: installer/build_mac.sh Stm && installer/test_mac.sh Stm
       - name: Package (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
@@ -85,10 +92,21 @@ jobs:
           $h = (Get-FileHash Stm-windows.zip -Algorithm SHA256).Hash.ToLower()
           "$h  Stm-windows.zip" | Out-File -Encoding ascii -NoNewline Stm-windows.zip.sha256
           Get-Content Stm-windows.zip.sha256
+      - name: Setup wizard (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          STM_DEVICE: cpu
+        run: |
+          installer/build_windows.ps1 -App Stm -Version $env:TAG -Url https://stm.pxlvzn.in
+          installer/test_windows.ps1 -App Stm -Smoke "python tests/smoke_app.py"
       - name: Upload to the release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "$TAG" dist/Stm-*.zip dist/Stm-*.zip.sha256 --clobber
+        run: |
+          if [ "$RUNNER_OS" = "macOS" ]; then files="dist/Stm-mac.zip* dist/Stm.dmg*"
+          else files="dist/Stm-windows.zip* dist/Stm-Setup.exe*"; fi
+          gh release upload "$TAG" $files --clobber
 
   publish:
     needs: build
@@ -99,7 +117,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          for a in Stm-mac.zip Stm-mac.zip.sha256 Stm-windows.zip Stm-windows.zip.sha256; do
+          for a in Stm-mac.zip Stm-mac.zip.sha256 Stm-windows.zip Stm-windows.zip.sha256 Stm.dmg Stm-Setup.exe; do
             gh release view "$TAG" --json assets -q '.assets[].name' | grep -qx "$a" || { echo "missing $a"; exit 1; }
           done
           gh release edit "$TAG" --draft=false --latest
