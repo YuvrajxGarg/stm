@@ -1,0 +1,45 @@
+# Checks the installers on pull requests that touch them: builds the app, the
+# Windows setup wizard and the macOS disk image, installs and uninstalls the
+# setup, and keeps both as downloadable artifacts. Releases build them in release.yml.
+name: Installer
+
+on:
+  pull_request:
+    paths: [installer/**, .github/workflows/installer.yml, .github/workflows/release.yml, Stm.spec]
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pyinstaller certifi -r requirements.txt
+      - name: Stand-in model (the release exports the real one)
+        run: mkdir -p models && echo stub > models/htdemucs.onnx
+      - run: pyinstaller --noconfirm --log-level WARN Stm.spec
+      - name: Disk image (macOS)
+        if: runner.os == 'macOS'
+        run: installer/build_mac.sh Stm && installer/test_mac.sh Stm
+      - name: Setup wizard (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          installer/build_windows.ps1 -App Stm -Version "$(Get-Content VERSION)" -Url https://stm.pxlvzn.in
+          installer/test_windows.ps1 -App Stm
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Stm-${{ runner.os }}
+          path: |
+            dist/Stm.dmg
+            dist/Stm-Setup.exe
+          if-no-files-found: error

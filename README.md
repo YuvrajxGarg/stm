@@ -24,8 +24,8 @@
 
 | Platform | Download | First launch |
 |---|---|---|
-| **macOS** 12+ · Apple silicon | [**Stm-mac.zip**](https://github.com/YuvrajxGarg/stm/releases/latest/download/Stm-mac.zip) | Unzip and move **Stm** to Applications. The app isn't notarized, so the first time: right-click → **Open**. On macOS 15 and later, go to **System Settings → Privacy & Security → Open Anyway** instead. |
-| **Windows** 10 / 11 · 64-bit | [**Stm-windows.zip**](https://github.com/YuvrajxGarg/stm/releases/latest/download/Stm-windows.zip) | Unzip the **Stm** folder somewhere you own (Documents, Desktop) and run **Stm.exe**. If SmartScreen appears, click **More info → Run anyway**. |
+| **macOS** 12+ · Apple silicon | [**Stm.dmg**](https://github.com/YuvrajxGarg/stm/releases/latest/download/Stm.dmg) | Open it and drag **Stm** to Applications. The app isn't notarized, so the first time: right-click → **Open**. On macOS 15 and later, go to **System Settings → Privacy & Security → Open Anyway** instead. |
+| **Windows** 10 / 11 · 64-bit | [**Stm-Setup.exe**](https://github.com/YuvrajxGarg/stm/releases/latest/download/Stm-Setup.exe) | Run the setup. It installs Stm for your account (no admin needed) and adds it to the Start menu. If SmartScreen appears, click **More info → Run anyway**. |
 
 The model and ffmpeg come bundled, so there's nothing else to install. Stm checks this repository for new releases and updates itself. It's also in [PXL](https://github.com/YuvrajxGarg/pxl).
 
@@ -92,7 +92,7 @@ Stm.spec                 PyInstaller recipe for both platforms
    git tag v1.0.1 && git push origin v1.0.1
    ```
 
-3. The **Release** workflow exports the model from the official Demucs weights, checks it against PyTorch, then builds, tests and smoke-tests both apps and attaches `Stm-mac.zip` and `Stm-windows.zip` (each with a `.sha256`) to the release. Installed copies pick it up on their next update check.
+3. The **Release** workflow exports the model from the official Demucs weights, checks it against PyTorch, then builds, tests and smoke-tests both apps and attaches the installers (`Stm.dmg`, `Stm-Setup.exe`) and the update zips (`Stm-mac.zip`, `Stm-windows.zip`, each with a `.sha256`) to the release. Installed copies pick it up on their next update check.
 
 ## Credits
 
