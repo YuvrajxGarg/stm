@@ -198,6 +198,11 @@ class Updater(object):
             rel = self.fetch_latest()
             if not is_newer(rel["version"], __version__):
                 self._set("uptodate")
+            elif not (rel["zip"] and rel["sha"]):
+                # A release without this platform's build yet (still uploading, or that
+                # platform failed): treat it as no update rather than offering a broken one.
+                log("release %s has no %s yet; skipping" % (rel["version"], asset_name()))
+                self._set("uptodate")
             elif self.settings.get("staged_version") == rel["version"] and os.path.exists(self.staged_path):
                 self._set("ready")
             else:
@@ -222,6 +227,11 @@ class Updater(object):
         try:
             rel = self.fetch_latest()
             if not is_newer(rel["version"], __version__):
+                self._set("uptodate")
+            elif not (rel["zip"] and rel["sha"]):
+                # A release without this platform's build yet (still uploading, or that
+                # platform failed): treat it as no update rather than offering a broken one.
+                log("release %s has no %s yet; skipping" % (rel["version"], asset_name()))
                 self._set("uptodate")
                 return False
             if self.settings.get("staged_version") == rel["version"] and os.path.exists(self.staged_path):

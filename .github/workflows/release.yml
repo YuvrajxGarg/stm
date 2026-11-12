@@ -1,6 +1,7 @@
 # Builds Stm for macOS and Windows when a version tag (v1.2.3) is pushed, and
 # attaches the apps to that GitHub release. Installed copies check the latest
-# release for updates:
+# release for updates. The release stays a draft until both apps are attached,
+# so installed copies never see a release that's missing their download:
 #   macOS   -> Stm-mac.zip      + .sha256
 #   Windows -> Stm-windows.zip  + .sha256
 # The htdemucs model is exported from the official Demucs weights in the first
@@ -27,12 +28,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Create the release if it doesn't exist
+      - name: Create the release as a draft if it doesn't exist
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release view "$TAG" >/dev/null 2>&1 || \
-            gh release create "$TAG" --title "Stm ${TAG#v}" --generate-notes --verify-tag
+            gh release create "$TAG" --title "Stm ${TAG#v}" --generate-notes --verify-tag --draft
 
   model:
     uses: ./.github/workflows/model.yml
@@ -88,3 +89,17 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release upload "$TAG" dist/Stm-*.zip dist/Stm-*.zip.sha256 --clobber
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish the release now that both apps are attached
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          for a in Stm-mac.zip Stm-mac.zip.sha256 Stm-windows.zip Stm-windows.zip.sha256; do
+            gh release view "$TAG" --json assets -q '.assets[].name' | grep -qx "$a" || { echo "missing $a"; exit 1; }
+          done
+          gh release edit "$TAG" --draft=false --latest
